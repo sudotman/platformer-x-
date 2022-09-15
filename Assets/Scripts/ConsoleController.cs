@@ -4,6 +4,18 @@ using UnityEngine;
 using PlayerControls;
 using UnityEngine.SceneManagement;
 
+class ValidFunction
+{
+    public int index;
+    public string functionName;
+
+    public ValidFunction(string functionName, int index)
+    {
+        this.index = index;
+        this.functionName = functionName;
+    }
+}
+
 public class ConsoleController : MonoBehaviour
 {
     public PlayerController playerController;
@@ -23,6 +35,9 @@ public class ConsoleController : MonoBehaviour
 
     private Rect windowRect = new Rect(0, 0, Screen.width, Screen.height);
 
+
+    private ValidFunction[] functions = {new ValidFunction("Sin",0), new ValidFunction("Cos",1), new ValidFunction("Tan",1), new ValidFunction("Linear",2), new ValidFunction("Log",3)};
+    int currentFunction;
 
     //Math commands
     public static MathCommands platformer_basic;
@@ -50,21 +65,25 @@ public class ConsoleController : MonoBehaviour
     bool prefixAdditionCushion = false;
     bool suffixAdditionCushion = false;
 
-    int[] numbers;
+    int executedCommandsNavigator = 0;
+    List<string> executedCommandsArray = new List<string>();
 
     string[] currentOperators;
+
+
     private void Awake()
     {
-
+        validExpression = true;
 
         platformer_basic = new MathCommands("platformer(", "tests the math commands", "platformer(x) = prefix * math function * suffix", () =>
         {
             string temp = input.Substring(input.IndexOf('(') + 1);
             Debug.Log(input.IndexOf('='));
-            input = input.Substring(input.IndexOf('=') + 2);
+
+            string tempInput = input.Substring(input.IndexOf('=') + 2);
 
             translationSpeed = 1;
-            Debug.Log("called " + input);
+            Debug.Log("called " + tempInput);
 
             string[] tempArray = temp.Split('x');
 
@@ -83,7 +102,7 @@ public class ConsoleController : MonoBehaviour
                 }
             }
            
-            currentOperators = input.Split(' ');
+            currentOperators = tempInput.Split(' ');
 
             //first note down all the operators
             //see if there are some additions then allow the user passing 0 otherewise force the user to pass on only non-negative values
@@ -94,15 +113,11 @@ public class ConsoleController : MonoBehaviour
                 CheckSystem(s, index);
                 index++;
             }
-
-
-
         });
 
         platformer_speed = new MathCommands("platformer_speed(", "tests the math commands", "platformer_speed(2x) = prefix * math function * suffix", () =>
         {
             string temp = input.Substring(17);
-
             input = input.Substring(16);
             Debug.Log("called " + input);
 
@@ -120,6 +135,8 @@ public class ConsoleController : MonoBehaviour
             string[] operators = input.Split(' ');
 
             int index = 0;
+            
+
             foreach (string s in operators)
             {
                 CheckSystem(s, index);
@@ -179,7 +196,8 @@ public class ConsoleController : MonoBehaviour
         }
         else if (index == 2) //Math Function
         {
-            
+            if (!FunctionCheck(s))
+                FailedChecks();
         }
         else if (index == 3) //Math Operator
         {
@@ -199,10 +217,42 @@ public class ConsoleController : MonoBehaviour
         }
     }
 
+    bool FunctionCheck(string s)
+    {
+        int temp = 0;
+        foreach(ValidFunction funs in functions)
+        {
+            Debug.LogError("namess " + funs.functionName);
+            temp++;
+            if (temp == functions.Length)
+            {
+                return false;
+            }
+            else if (s.Contains(funs.functionName))
+            {
+                currentFunction = temp - 1;
+                goto BreakKaro;
+            }
+        }
+
+        BreakKaro:
+            return true;
+    }
+
     void PassedChecks()
     {
-        Debug.Log("passed checks");
-        this.ResumeMovement();
+        if (validExpression)
+        {
+            Debug.Log("passed checks");
+
+
+            this.ResumeMovement();
+        }
+        else
+        {
+            Debug.LogAssertion("failed checks");
+        }
+        
     }
 
     void AdditionCheck()
@@ -379,6 +429,28 @@ public class ConsoleController : MonoBehaviour
 
             Debug.Log(Mathf.Sin(timer) / 100);
 
+            // a better solution than hardcoding different functions should exist but alas i cant find it so there it is [OH WAIT, MAYBE I CAN DERIVE THE SIN IN REAL TIME AND SET BORDER VALUES, I WILL EXPLORE LATER]
+
+            if(currentFunction == 0)
+            {
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Sin(timer * 2) / 100) * suffixMultiply + suffixAdd);
+            }
+            else if(currentFunction == 1)
+            {
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Cos(timer * 2) / 100) * suffixMultiply + suffixAdd);
+            }
+            else if(currentFunction == 3)
+            {
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Tan(timer * 2) / 100) * suffixMultiply + suffixAdd);
+            }
+            else if(currentFunction == 4) //linear
+            {
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * ((timer * 2) / 100) * suffixMultiply + suffixAdd);
+            }
+            else if(currentFunction == 5) // log
+            {
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Log(timer * 2) / 100) * suffixMultiply + suffixAdd);
+            }
             currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Sin(timer*2) / 100) * suffixMultiply + suffixAdd);
             Debug.LogError("add " + prefixAdd + "multiply " + prefixMultiply + "add " + suffixAdd + "multiply " + suffixMultiply);
 
@@ -440,7 +512,7 @@ public class ConsoleController : MonoBehaviour
                 if (focusable)
                 {
                     Debug.Log("pressed enter");
-
+                    validExpression = true;
                     if (input.Length > 0)
                     {
                         focusable = false;
@@ -458,6 +530,46 @@ public class ConsoleController : MonoBehaviour
                     GUI.FocusControl("mathsInput");
                     focusable = true;
                 }
+            }
+            else if(Event.current.keyCode == KeyCode.UpArrow)
+            {
+                if (!simulatingNow)
+                {
+                    if (focusable)
+                    {
+                        Debug.Log("pressed arrow");
+                        
+                            focusable = false;
+
+                            StartCoroutine(UpArrow());
+
+                        
+                        GUI.FocusControl(null);
+                    }
+                   
+                    
+                }
+                
+            }
+            else if (Event.current.keyCode == KeyCode.DownArrow)
+            {
+                if (!simulatingNow)
+                {
+                    if (focusable)
+                    {
+                        Debug.Log("pressed arrow");
+
+                        focusable = false;
+
+                        StartCoroutine(DownArrow());
+
+
+                        GUI.FocusControl(null);
+                    }
+
+
+                }
+
             }
 
             if (Event.current.keyCode == KeyCode.Escape)
@@ -528,14 +640,60 @@ public class ConsoleController : MonoBehaviour
             }
         }
 
-        input = new string("");
+        //input = new string("");
     }
 
     IEnumerator Simulate()
     {
         yield return new WaitForSeconds(1f);
+        executedCommandsArray.Add(input);
+        executedCommandsNavigator = executedCommandsArray.Count - 1;
         HandleInput();
         Debug.Log("done simulating");
+        focusable = true;
+        simulatingNow = false;
+    }
+
+    IEnumerator UpArrow()
+    {
+        yield return new WaitForSeconds(0.4f);
+
+        if (executedCommandsNavigator > 0)
+        {
+            Debug.LogError(executedCommandsArray.Count);
+            Debug.LogError(executedCommandsNavigator);
+
+            foreach(string s in executedCommandsArray)
+            {
+                Debug.LogWarning(s);
+            }
+            executedCommandsNavigator--;
+            if (executedCommandsArray.Count > 0)
+                input = executedCommandsArray[executedCommandsNavigator];
+        }
+        
+        focusable = true;
+        simulatingNow = false;
+    }
+
+    IEnumerator DownArrow()
+    {
+        yield return new WaitForSeconds(0.4f);
+
+        if (executedCommandsNavigator < executedCommandsArray.Count - 1)
+        {
+            Debug.LogError(executedCommandsArray.Count);
+            Debug.LogError(executedCommandsNavigator);
+
+            foreach (string s in executedCommandsArray)
+            {
+                Debug.LogWarning(s);
+            }
+            executedCommandsNavigator++;
+            if (executedCommandsArray.Count > 0)
+                input = executedCommandsArray[executedCommandsNavigator];
+        }
+
         focusable = true;
         simulatingNow = false;
     }
