@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using PlayerControls;
+using UnityEngine.SceneManagement;
 
 public class ConsoleController : MonoBehaviour
 {
@@ -12,7 +13,7 @@ public class ConsoleController : MonoBehaviour
     private bool validExpression = false;
 
     public bool disableConsole = false;
-    
+
     string input;
 
     bool focusable = true;
@@ -27,6 +28,7 @@ public class ConsoleController : MonoBehaviour
     public static MathCommands platformer_basic;
     public static MathCommands platformer_speed;
     public static MathCommands TEST_MATH_2;
+    public static MathCommands reset;
     public static MathCommands HELP;
     public static MathCommands<int> MATH_WITH_PARAM;
 
@@ -34,26 +36,67 @@ public class ConsoleController : MonoBehaviour
 
     private float translationSpeed = 1.0f;
 
+    //for different operators
+    //0 - addition, 1 - subtraction, 2 - multiplication, 3 - division
+    //a function is defined as fn:Sin(x)
+    float prefixAdd = 0.0f;
+    float prefixMultiply = 0.0f;
+    float suffixAdd = 0.0f;
+    float suffixMultiply = 0.0f;
+
+    float prefixTemp = 0.0f;
+    float suffixTemp = 0.0f;
+
+    bool prefixAdditionCushion = false;
+    bool suffixAdditionCushion = false;
+
+    int[] numbers;
+
+    string[] currentOperators;
     private void Awake()
     {
-        
 
-        platformer_basic = new MathCommands("platformer(x) =", "tests the math commands", "platformer(x) = prefix * math function * suffix", () =>
+
+        platformer_basic = new MathCommands("platformer(", "tests the math commands", "platformer(x) = prefix * math function * suffix", () =>
         {
-            input = input.Substring(16);
+            string temp = input.Substring(input.IndexOf('(') + 1);
+            Debug.Log(input.IndexOf('='));
+            input = input.Substring(input.IndexOf('=') + 2);
 
             translationSpeed = 1;
             Debug.Log("called " + input);
 
-            string[] operators = input.Split(' ');
+            string[] tempArray = temp.Split('x');
 
-            int index = 0;
-            foreach(string s in operators)
+            if(tempArray.Length == 0)
             {
-                CheckSystem(s,index);
+                translationSpeed = 1;
+            }
+            else
+            {
+                float.TryParse(tempArray[0], out translationSpeed);
+                Debug.LogError(translationSpeed);
+
+                if (translationSpeed == 0)
+                {
+                    translationSpeed = 1;
+                }
+            }
+           
+            currentOperators = input.Split(' ');
+
+            //first note down all the operators
+            //see if there are some additions then allow the user passing 0 otherewise force the user to pass on only non-negative values
+            AdditionCheck();
+            int index = 0;
+            foreach (string s in currentOperators)
+            {
+                CheckSystem(s, index);
                 index++;
             }
-            
+
+
+
         });
 
         platformer_speed = new MathCommands("platformer_speed(", "tests the math commands", "platformer_speed(2x) = prefix * math function * suffix", () =>
@@ -63,13 +106,13 @@ public class ConsoleController : MonoBehaviour
             input = input.Substring(16);
             Debug.Log("called " + input);
 
-            
+
             string[] tempArray = temp.Split('x');
 
             float.TryParse(tempArray[0], out translationSpeed);
             Debug.LogError(translationSpeed);
 
-            if(translationSpeed == 0)
+            if (translationSpeed == 0)
             {
                 translationSpeed = 1;
             }
@@ -83,11 +126,19 @@ public class ConsoleController : MonoBehaviour
                 index++;
             }
 
+
+
         });
 
         TEST_MATH_2 = new MathCommands("test_math_2", "tests the math commands 2", "test_math_2", () =>
         {
             Debug.Log("called 2");
+        });
+
+        reset = new MathCommands("reset", "reset the scene", "reset", () =>
+        {
+            Debug.Log("called reset");
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         });
 
         MATH_WITH_PARAM = new MathCommands<int>("math_with_param", "tests the math commands 2", "math_with_param <amount>", (x) =>
@@ -105,77 +156,109 @@ public class ConsoleController : MonoBehaviour
             platformer_basic,
             platformer_speed,
             TEST_MATH_2,
+            reset,
             MATH_WITH_PARAM,
             HELP
         };
+
     }
 
     void CheckSystem(string s, int index)
     {
-        if(index == 0)
+
+        if (index == 0)
         {
             // Prefix
-            if (NumberCheck(s))
-            {
-               
-            }
-            else
-            {
+            if (!NumberCheck(s, index))
                 FailedChecks();
-            }
-           
-        }else if (index == 1) // Prefix Operator
-        {
-            if (OperatorCheck(s))
-            {
-                
-            }
-            else { FailedChecks();}
         }
-        else if(index == 2) //Math Function
+        else if (index == 1) // Prefix Operator
         {
-            if (NumberCheck(s))
-            {
-                
-            }
-            else { FailedChecks(); }
+            if (!OperatorCheck(s, index))
+                FailedChecks();
         }
-        else if(index == 3) //Math Operator
+        else if (index == 2) //Math Function
         {
-            if (OperatorCheck(s))
+            
+        }
+        else if (index == 3) //Math Operator
+        {
+            if (!OperatorCheck(s, index))
+                FailedChecks();
+        }
+        else if (index == 4) // Suffix
+        {
+            if (NumberCheck(s, index))
             {
-                
+                PassedChecks();
             }
             else
             {
                 FailedChecks();
             }
         }
-        else if(index == 4) // Suffix
-        {
-            if (NumberCheck(s))
-            {
-
-               this.ResumeMovement();
-                
-            }
-            else
-            {
-                FailedChecks();
-            }
-        }
-
-       
-     
     }
-    
-    bool OperatorCheck(string s)
+
+    void PassedChecks()
+    {
+        Debug.Log("passed checks");
+        this.ResumeMovement();
+    }
+
+    void AdditionCheck()
+    {
+        for (int i = 0; i < currentOperators.Length; i++)
+        {
+            if (i == 1)
+            {
+                if (currentOperators[i].Equals("+"))
+                {
+                    prefixAdditionCushion = true;
+                }
+            }
+            else if (i == 3)
+            {
+                if (currentOperators[i].Equals("+"))
+                {
+                    suffixAdditionCushion = true;
+                }
+            }
+        }
+    }
+
+    bool OperatorCheck(string s, int index)
     {
         switch (s)
         {
             case "*":
+                if (index == 1)
+                {
+                    prefixAdd = 0;
+
+                    if (prefixTemp != 0)
+                        prefixMultiply = prefixTemp;
+                    else
+                    {
+                        FailedChecks();
+                        return false;
+                    }
+                }
                 return true;
             case "+":
+                if (index == 1)
+                {
+                    prefixMultiply = 1;
+
+                    if (prefixTemp != 0)
+                    {
+                        prefixAdd = prefixTemp;
+                    }
+                    else
+                    {
+                        FailedChecks();
+                        return false;
+                    }
+                }
                 return true;
             case "-":
                 return true;
@@ -186,17 +269,87 @@ public class ConsoleController : MonoBehaviour
         }
     }
 
-    bool NumberCheck(string s)
+    bool RetrospectiveSuffixOperatorCheck(string s, int index)
     {
-        int test;
-        int.TryParse("25", out test);
-
-        if(test == 0)
+        switch (s)
         {
+            case "*":
+                suffixAdd = 0;
+
+                if (suffixTemp != 0)
+                    suffixMultiply = suffixTemp;
+                else
+                {
+                    FailedChecks();
+                    return false;
+                }
+                return true;
+            case "+":
+                suffixMultiply = 1;
+
+                if (suffixTemp != 0)
+                {
+                    suffixAdd = suffixTemp;
+                }
+                else
+                {
+                    if (suffixAdditionCushion)
+                    {
+                        suffixAdd = 0;
+                    }
+                    else
+                    {
+                        FailedChecks();
+                        return false;
+                    }
+                }
+                return true;
+            case "-":
+                return true;
+            case "/":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    bool NumberCheck(string s, int index)
+    {
+        float.TryParse(s, out float test);
+
+        if (test == 0)
+        {
+            prefixTemp = 0;
+
+            if (index == 0)
+            {
+                if (prefixAdditionCushion)
+                {
+                    prefixTemp = test;
+                    return true;
+                }
+            }
+            else if (index == 4)
+            {
+                if (suffixAdditionCushion)
+                {
+                    suffixTemp = test;
+                    return true;
+                }
+            }
             return false;
         }
         else
         {
+            if (index == 0)
+            {
+                prefixTemp = test;
+            }
+            else if (index == 4)
+            {
+                suffixTemp = test;
+                RetrospectiveSuffixOperatorCheck(currentOperators[index - 1], index - 1);
+            }
             return true;
         }
     }
@@ -205,7 +358,7 @@ public class ConsoleController : MonoBehaviour
     {
         validExpression = false;
         Debug.LogError("failed checks");
-        
+
     }
 
     // Start is called before the first frame update
@@ -213,7 +366,7 @@ public class ConsoleController : MonoBehaviour
     {
         focusable = true;
 
-        startPos = playerController.transform.position; 
+        startPos = playerController.transform.position;
     }
 
     // Update is called once per frame
@@ -226,8 +379,10 @@ public class ConsoleController : MonoBehaviour
 
             Debug.Log(Mathf.Sin(timer) / 100);
 
-            currentTranslation.y = currentTranslation.y + Mathf.Sin(timer) / 100;
-            currentTranslation.x = currentTranslation.x + timer / (100 * (1/translationSpeed));
+            currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Sin(timer*2) / 100) * suffixMultiply + suffixAdd);
+            Debug.LogError("add " + prefixAdd + "multiply " + prefixMultiply + "add " + suffixAdd + "multiply " + suffixMultiply);
+
+            currentTranslation.x = currentTranslation.x + timer / (100 * (1 / translationSpeed));
 
             transform.position = currentTranslation;
         }
@@ -315,10 +470,10 @@ public class ConsoleController : MonoBehaviour
 
             }
         }
-        
+
 
     }
-        
+
     public void MoveToStart()
     {
         playerController.transform.position = startPos;
@@ -341,6 +496,8 @@ public class ConsoleController : MonoBehaviour
         executingNow = true;
     }
 
+
+
     public void ResumeMovement()
     {
         playerController.freezeMovement = false;
@@ -348,23 +505,23 @@ public class ConsoleController : MonoBehaviour
         timer = 0.0f;
         executingNow = false;
     }
- 
+
 
     void HandleInput()
     {
         string[] properties = input.Split(' ');
 
-        for(int i=0; i < commandList.Count; i++)
+        for (int i = 0; i < commandList.Count; i++)
         {
             MathCommandsBase mathCommandsBase = commandList[i] as MathCommandsBase;
 
             if (input.Contains(mathCommandsBase.commandId))
             {
-                if(commandList[i] as MathCommands != null)
+                if (commandList[i] as MathCommands != null)
                 {
                     (commandList[i] as MathCommands).Invoke();
                 }
-                else if(commandList[i] as MathCommands<int> != null)
+                else if (commandList[i] as MathCommands<int> != null)
                 {
                     (commandList[i] as MathCommands<int>).Invoke(int.Parse(properties[1]));
                 }
