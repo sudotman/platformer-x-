@@ -36,7 +36,7 @@ public class ConsoleController : MonoBehaviour
     private Rect windowRect = new Rect(0, 0, Screen.width, Screen.height);
 
 
-    private ValidFunction[] functions = {new ValidFunction("Sin",0), new ValidFunction("Cos",1), new ValidFunction("Tan",1), new ValidFunction("Linear",2), new ValidFunction("Log",3)};
+    private ValidFunction[] functions = {new ValidFunction("Sin",0), new ValidFunction("Cos",1), new ValidFunction("Tan",1), new ValidFunction("Linear",2), new ValidFunction("Log",3), new ValidFunction("ASin",4), new ValidFunction("ACos", 5), new ValidFunction("ATan", 6) };
     int currentFunction;
 
     //Math commands
@@ -61,6 +61,8 @@ public class ConsoleController : MonoBehaviour
 
     float prefixTemp = 0.0f;
     float suffixTemp = 0.0f;
+
+    float functionMultiplier = 1;
 
     bool prefixAdditionCushion = false;
     bool suffixAdditionCushion = false;
@@ -224,7 +226,7 @@ public class ConsoleController : MonoBehaviour
         {
             Debug.LogError("namess " + funs.functionName);
             temp++;
-            if (temp == functions.Length)
+            if (temp == functions.Length + 1)
             {
                 return false;
             }
@@ -433,25 +435,37 @@ public class ConsoleController : MonoBehaviour
 
             if(currentFunction == 0)
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Sin(timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Sin(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
             }
             else if(currentFunction == 1)
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Cos(timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Cos(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
             }
-            else if(currentFunction == 3)
+            else if(currentFunction == 2)
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Tan(timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Tan(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
             }
-            else if(currentFunction == 4) //linear
+            else if(currentFunction == 3) //linear
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * ((timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * ((functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
             }
-            else if(currentFunction == 5) // log
+            else if(currentFunction == 4) // log
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Log(timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Log(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
             }
-            currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Sin(timer*2) / 100) * suffixMultiply + suffixAdd);
+            else if (currentFunction == 5) // asin
+            {
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Asin(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+            }
+            else if (currentFunction == 6) // acos
+            {
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Acos(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+            }
+            else if (currentFunction == 7) // atan
+            {
+                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Atan(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+            }
+
             Debug.LogError("add " + prefixAdd + "multiply " + prefixMultiply + "add " + suffixAdd + "multiply " + suffixMultiply);
 
             currentTranslation.x = currentTranslation.x + timer / (100 * (1 / translationSpeed));
