@@ -87,15 +87,38 @@ public class ConsoleController : MonoBehaviour
             translationSpeed = 1;
             Debug.Log("called " + tempInput);
 
-            string[] tempArray = temp.Split('x');
+            string[] translationTempArray = temp.Split('x');
 
-            if(tempArray.Length == 0)
+
+            string tempFunctionMultiplierString = string.Empty;
+
+            //combine the string from translationtemp array split to one string
+            foreach(string s in translationTempArray)
+            {
+                
+                tempFunctionMultiplierString += s;
+            }
+
+            tempFunctionMultiplierString = tempFunctionMultiplierString.Substring(tempFunctionMultiplierString.LastIndexOf('('));
+
+            string[] subdividedTempFunctionMultiplierString = tempFunctionMultiplierString.Split('(',')');
+
+            if (subdividedTempFunctionMultiplierString[1].Equals(""))
+            {
+                functionMultiplier = 1;
+            }
+            else
+            {
+                functionMultiplier = float.Parse(subdividedTempFunctionMultiplierString[1]);
+            }
+          
+            if (translationTempArray.Length == 0)
             {
                 translationSpeed = 1;
             }
             else
             {
-                float.TryParse(tempArray[0], out translationSpeed);
+                float.TryParse(translationTempArray[0], out translationSpeed);
                 Debug.LogError(translationSpeed);
 
                 if (translationSpeed == 0)
@@ -431,40 +454,41 @@ public class ConsoleController : MonoBehaviour
 
             Debug.Log(Mathf.Sin(timer) / 100);
 
-            // a better solution than hardcoding different functions should exist but alas i cant find it so there it is [OH WAIT, MAYBE I CAN DERIVE THE SIN IN REAL TIME AND SET BORDER VALUES, I WILL EXPLORE LATER]
+            // a better solution than hardcoding different functions should exist but alas i cant find it (or realize it right now) so there it is [OH WAIT, MAYBE I CAN DERIVE THE SIN IN REAL TIME AND SET BORDER VALUES, I WILL EXPLORE LATER]
 
             if(currentFunction == 0)
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Sin(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd / 100 + prefixMultiply * (Mathf.Sin(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd/100);
             }
             else if(currentFunction == 1)
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Cos(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd / 100 + prefixMultiply * (Mathf.Cos(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd / 100);
             }
             else if(currentFunction == 2)
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Tan(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd / 100 + prefixMultiply * (Mathf.Tan(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd / 100);
             }
             else if(currentFunction == 3) //linear
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * ((functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd / 100 + prefixMultiply * ((functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd / 100);
             }
             else if(currentFunction == 4) // log
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Log(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd / 100 + prefixMultiply * (Mathf.Log(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd / 100);
             }
             else if (currentFunction == 5) // asin
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Asin(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd / 100 + prefixMultiply * (Mathf.Asin(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd / 100);
             }
             else if (currentFunction == 6) // acos
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Acos(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd / 100 + prefixMultiply * (Mathf.Acos(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd / 100);
             }
             else if (currentFunction == 7) // atan
             {
-                currentTranslation.y = currentTranslation.y + (prefixAdd + prefixMultiply * (Mathf.Atan(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd);
+                currentTranslation.y = currentTranslation.y + (prefixAdd / 100 + prefixMultiply * (Mathf.Atan(functionMultiplier * timer * 2) / 100) * suffixMultiply + suffixAdd / 100);
             }
+
 
             Debug.LogError("add " + prefixAdd + "multiply " + prefixMultiply + "add " + suffixAdd + "multiply " + suffixMultiply);
 
