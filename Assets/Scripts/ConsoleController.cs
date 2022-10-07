@@ -44,6 +44,7 @@ public class ConsoleController : MonoBehaviour
     public static MathCommands platformer_speed;
     public static MathCommands TEST_MATH_2;
     public static MathCommands reset;
+    public static MathCommands free_mode;
     public static MathCommands HELP;
     public static MathCommands<int> MATH_WITH_PARAM;
 
@@ -196,6 +197,12 @@ public class ConsoleController : MonoBehaviour
             //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         });
 
+        free_mode = new MathCommands("free", "free movement", "reset", () =>
+        {
+            FreeThePlayer();
+        });
+
+
         MATH_WITH_PARAM = new MathCommands<int>("math_with_param", "tests the math commands 2", "math_with_param <amount>", (x) =>
         {
             Debug.Log("called 3");
@@ -213,9 +220,22 @@ public class ConsoleController : MonoBehaviour
             TEST_MATH_2,
             reset,
             MATH_WITH_PARAM,
+            free_mode,
             HELP
         };
 
+    }
+
+    void FreeThePlayer()
+    {
+        Debug.Log("called freemode");
+        playerController.consoleMode = false;
+        playerController.freezeMovement = false;
+        playerController.waitForConsole = false;
+
+        disableConsole = true;
+
+        input = "";
     }
 
     void CheckSystem(string s, int index)
@@ -510,6 +530,10 @@ public class ConsoleController : MonoBehaviour
             transform.position = currentTranslation;
         }
 
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            disableConsole = false;
+        }
     }
 
     Vector2 scroll;
@@ -697,7 +721,7 @@ public class ConsoleController : MonoBehaviour
             }
         }
 
-        //input = new string("");
+        
     }
 
     IEnumerator Simulate()
