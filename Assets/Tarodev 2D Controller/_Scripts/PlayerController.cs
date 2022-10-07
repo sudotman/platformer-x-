@@ -40,6 +40,8 @@ namespace PlayerControls {
 
         private void Start()
         {
+            GameManager.instance.spawnPosition = transform.position;
+
             StartCoroutine(StartMovementBuffer());
         }
 

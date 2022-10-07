@@ -6,6 +6,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
     public BoxCollider2D lastDisabledCollider;
+    public Vector3 spawnPosition;
 
     private void Awake()
     {

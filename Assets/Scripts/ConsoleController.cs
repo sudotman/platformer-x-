@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using PlayerControls;
 using UnityEngine.SceneManagement;
+using System;
 
 class ValidFunction
 {
@@ -34,7 +35,6 @@ public class ConsoleController : MonoBehaviour
     bool showHelp;
 
     private Rect windowRect = new Rect(0, 0, Screen.width, Screen.height);
-
 
     private ValidFunction[] functions = {new ValidFunction("Sin",0), new ValidFunction("Cos",1), new ValidFunction("Tan",1), new ValidFunction("Linear",2), new ValidFunction("Log",3), new ValidFunction("ASin",4), new ValidFunction("ACos", 5), new ValidFunction("ATan", 6) };
     int currentFunction;
@@ -79,65 +79,74 @@ public class ConsoleController : MonoBehaviour
 
         platformer_basic = new MathCommands("platformer(", "tests the math commands", "platformer(x) = prefix * math function * suffix", () =>
         {
-            string temp = input.Substring(input.IndexOf('(') + 1);
-            Debug.Log(input.IndexOf('='));
-
-            string tempInput = input.Substring(input.IndexOf('=') + 2);
-
-            translationSpeed = 1;
-            Debug.Log("called " + tempInput);
-
-            string[] translationTempArray = temp.Split('x');
-
-
-            string tempFunctionMultiplierString = string.Empty;
-
-            //combine the string from translationtemp array split to one string
-            foreach(string s in translationTempArray)
+            try
             {
-                
-                tempFunctionMultiplierString += s;
-            }
+                string temp = input.Substring(input.IndexOf('(') + 1);
+                Debug.Log(input.IndexOf('='));
 
-            tempFunctionMultiplierString = tempFunctionMultiplierString.Substring(tempFunctionMultiplierString.LastIndexOf('('));
+                string tempInput = input.Substring(input.IndexOf('=') + 2);
 
-            string[] subdividedTempFunctionMultiplierString = tempFunctionMultiplierString.Split('(',')');
-
-            if (subdividedTempFunctionMultiplierString[1].Equals(""))
-            {
-                functionMultiplier = 1;
-            }
-            else
-            {
-                functionMultiplier = float.Parse(subdividedTempFunctionMultiplierString[1]);
-            }
-          
-            if (translationTempArray.Length == 0)
-            {
                 translationSpeed = 1;
-            }
-            else
-            {
-                float.TryParse(translationTempArray[0], out translationSpeed);
-                Debug.LogError(translationSpeed);
+                Debug.Log("called " + tempInput);
 
-                if (translationSpeed == 0)
+                string[] translationTempArray = temp.Split('x');
+
+
+                string tempFunctionMultiplierString = string.Empty;
+
+                //combine the string from translationtemp array split to one string
+                foreach (string s in translationTempArray)
+                {
+
+                    tempFunctionMultiplierString += s;
+                }
+
+                tempFunctionMultiplierString = tempFunctionMultiplierString.Substring(tempFunctionMultiplierString.LastIndexOf('('));
+
+                string[] subdividedTempFunctionMultiplierString = tempFunctionMultiplierString.Split('(', ')');
+
+                if (subdividedTempFunctionMultiplierString[1].Equals(""))
+                {
+                    functionMultiplier = 1;
+                }
+                else
+                {
+                    functionMultiplier = float.Parse(subdividedTempFunctionMultiplierString[1]);
+                }
+
+                if (translationTempArray.Length == 0)
                 {
                     translationSpeed = 1;
                 }
-            }
-           
-            currentOperators = tempInput.Split(' ');
+                else
+                {
+                    float.TryParse(translationTempArray[0], out translationSpeed);
+                    Debug.LogError(translationSpeed);
 
-            //first note down all the operators
-            //see if there are some additions then allow the user passing 0 otherewise force the user to pass on only non-negative values
-            AdditionCheck();
-            int index = 0;
-            foreach (string s in currentOperators)
-            {
-                CheckSystem(s, index);
-                index++;
+                    if (translationSpeed == 0)
+                    {
+                        translationSpeed = 1;
+                    }
+                }
+
+                currentOperators = tempInput.Split(' ');
+
+                //first note down all the operators
+                //see if there are some additions then allow the user passing 0 otherewise force the user to pass on only non-negative values
+                AdditionCheck();
+                int index = 0;
+                foreach (string s in currentOperators)
+                {
+                    CheckSystem(s, index);
+                    index++;
+                }
             }
+            catch(ArgumentOutOfRangeException e)
+            {
+                Debug.LogError("the input is wrong " + e);
+            }
+
+            
         });
 
         platformer_speed = new MathCommands("platformer_speed(", "tests the math commands", "platformer_speed(2x) = prefix * math function * suffix", () =>
@@ -180,7 +189,11 @@ public class ConsoleController : MonoBehaviour
         reset = new MathCommands("reset", "reset the scene", "reset", () =>
         {
             Debug.Log("called reset");
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+
+            this.FreezeMovement();
+            GameManager.instance.lastDisabledCollider.enabled = true;
+            transform.position = GameManager.instance.spawnPosition;
+            //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         });
 
         MATH_WITH_PARAM = new MathCommands<int>("math_with_param", "tests the math commands 2", "math_with_param <amount>", (x) =>
@@ -490,7 +503,7 @@ public class ConsoleController : MonoBehaviour
             }
 
 
-            Debug.LogError("add " + prefixAdd + "multiply " + prefixMultiply + "add " + suffixAdd + "multiply " + suffixMultiply);
+            Debug.LogError("add \n" + prefixAdd + "multiply \n" + prefixMultiply + "add \n" + suffixAdd + "multiply \n" + suffixMultiply);
 
             currentTranslation.x = currentTranslation.x + timer / (100 * (1 / translationSpeed));
 
@@ -646,7 +659,13 @@ public class ConsoleController : MonoBehaviour
         executingNow = true;
     }
 
+    public void FreezeMovement()
+    {
+        playerController.freezeMovement = true;
 
+        timer = 0.0f;
+        executingNow = false;
+    }
 
     public void ResumeMovement()
     {
