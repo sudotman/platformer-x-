@@ -21,13 +21,15 @@ public class ConsoleController : MonoBehaviour
 {
     public PlayerController playerController;
 
-    private Vector3 startPos;
+    [HideInInspector]
+    public Vector3 checkpointPos;
 
     private bool validExpression = false;
 
     public bool disableConsole = false;
 
     string input;
+    public string processedInput;
 
     bool focusable = true;
     bool simulatingNow = false;
@@ -87,6 +89,8 @@ public class ConsoleController : MonoBehaviour
 
                 string tempInput = input.Substring(input.IndexOf('=') + 2);
 
+                processedInput = "current math: " + tempInput;
+
                 translationSpeed = 1;
                 Debug.Log("called " + tempInput);
 
@@ -133,7 +137,7 @@ public class ConsoleController : MonoBehaviour
                 currentOperators = tempInput.Split(' ');
 
                 //first note down all the operators
-                //see if there are some additions then allow the user passing 0 otherewise force the user to pass on only non-negative values
+                //see if there are some additions then allow the user passing 0 otherwise force the user to pass on only non-negative values
                 AdditionCheck();
                 int index = 0;
                 foreach (string s in currentOperators)
@@ -474,7 +478,9 @@ public class ConsoleController : MonoBehaviour
     {
         focusable = true;
 
-        startPos = playerController.transform.position;
+        checkpointPos = playerController.transform.position;
+
+        processedInput = "math eqn will appear here";
     }
 
     // Update is called once per frame
@@ -482,6 +488,7 @@ public class ConsoleController : MonoBehaviour
     {
         if (executingNow)
         {
+
             Debug.Log(timer);
             timer += Time.deltaTime;
 
@@ -663,7 +670,7 @@ public class ConsoleController : MonoBehaviour
 
     public void MoveToStart()
     {
-        playerController.transform.position = startPos;
+        playerController.transform.position = checkpointPos;
     }
 
 
@@ -681,6 +688,8 @@ public class ConsoleController : MonoBehaviour
         currentTranslation = new Vector2(transform.position.x, transform.position.y);
 
         executingNow = true;
+
+
     }
 
     public void FreezeMovement()
